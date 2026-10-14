@@ -32,24 +32,34 @@ async def connect(update: Update, context: ContextTypes):
 
 
 async def handle_query(update: Update, context: ContextTypes):
+    """Handle a text message by querying FreeAgent and replying with the result."""
     user = update.effective_user
     text = update.message.text.strip()
 
-    # Check if user is connected
-    if not active_user_ids:
-        await update.message.reply_html("You're not connected to a FreeAgent account yet. Ask David to connect.")
-        return
+    try:
+        # Call the query API endpoint
+        import httpx
+        from ..config import settings
 
-    # Build the client (in production, use a proper store)
-    # For now, we need the access token - this is a placeholder
-    # In production, look up the user's stored token
-    await update.message.reply_html("Processing your query...")
+        webhook_secret = settings.TELEGRAM_WEBHOOK_SECRET or "default-secret"
+        api_base = os.environ.get("API_BASE_URL", "http://127.0.0.1:8000")
+        response = httpx.post(
+            f"{api_base}/api/query",
+            json={"query": text},
+            headers={"x-telegram-user-id": str(user.id)},
+            timeout=30.0,
+        )
+        data = response.json()
+        if data.get("success") and data.get("data"):
+            await update.message.reply_html(f"Here's what I found: {data['data']}")
+        else:
+            await update.message.reply_html(f"Sorry, I couldn't fetch that: {data.get('error', data.get('message', 'Unknown error'))}")
+    except Exception as e:
+        await update.message.reply_html(f"Error: {e}")
 
 
 def build_application() -> Application:
     """Build the Telegram application with webhook support."""
-    from ..config import settings
-
     app = Application.builder().token(settings.TELEGRAM_BOT_TOKEN).build()
 
     # Register handlers
@@ -66,7 +76,23 @@ def build_application() -> Application:
     return app
 
 
-def setup_webhook(app: Application, webhook_url: str, secret: str):
-    """Set the webhook URL for the bot."""
-    app.updater.bot.set_webhook(url=f"{webhook_url}/webhook/{secret}")
-    logger.info(f"Webhook set to {webhook_url}/webhook/{secret}")
+async def process_webhook(webhook_secret: str, body: dict):
+    """Process incoming webhook update from Telegram."""
+    from telegram import Update
+    from telegram.ext import ContextTypes
+
+    try:
+        update = Update.de_json(body, None)  # None = no dispatcher yet
+        # Use the global application
+        app = build_application()
+        await app.process_update(update)
+        return {"ok": True, "result": "processed"}
+    except Exception as e:
+        logger.exception(f"Webhook processing error: {e}")
+        return {"ok": False, "error": str(e)}
+
+
+if __name__ == "__main__":
+    app = build_application()
+    app.run()
+

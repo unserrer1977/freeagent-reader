@@ -29,6 +29,13 @@ def health():
     return {"status": "ok", "service": "freeagent-reader"}
 
 
+# Telegram webhook endpoint for receiving updates
+@app.post(f"/webhook/{{webhook_secret}}")
+async def telegram_webhook(webhook_secret: str, body: dict):
+    from src.bot.telegram_bot import process_webhook
+    return await process_webhook(webhook_secret, body)
+
+
 # Web UI
 @app.get("/", response_class=HTMLResponse)
 def index():
