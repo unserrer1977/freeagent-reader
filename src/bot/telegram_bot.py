@@ -89,11 +89,17 @@ async def process_webhook(webhook_secret: str, body: dict):
     try:
         if "message" not in body:
             return {"ok": True, "result": "no message in payload"}
+        # Add defaults that the User class expects but the payload may omit
+        data = dict(body)
+        if "message" in data:
+            msg = data["message"]
+            if "is_bot" not in msg:
+                msg["is_bot"] = False
         # Use the global application's bot to parse the update
         global app
         if app is None:
             app = build_application()
-        update = Update.de_json(body, app.bot)
+        update = Update.de_json(data, app.bot)
         await app.process_update(update)
         return {"ok": True, "result": "processed"}
     except Exception as e:
