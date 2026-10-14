@@ -84,9 +84,10 @@ def build_application() -> Application:
 async def process_webhook(webhook_secret: str, body: dict):
     """Process incoming webhook update from Telegram."""
     from telegram import Update
-    from telegram.ext import ContextTypes
+    from src.bot.telegram_bot import build_application
 
     try:
+        logger.info(f"process_webhook called: secret={webhook_secret}, has_message={'message' in body}")
         if "message" not in body:
             return {"ok": True, "result": "no message in payload"}
         # Add defaults that the User class expects but the payload may omit
@@ -99,12 +100,16 @@ async def process_webhook(webhook_secret: str, body: dict):
             if "from" in msg and isinstance(msg["from"], dict):
                 if "is_bot" not in msg["from"]:
                     msg["from"]["is_bot"] = False
-        # Use the global application's bot to parse the update
-        global app
-        if app is None:
-            app = build_application()
+
+        # Build the application with the bot token
+        app = build_application()
+        logger.info("Application built, token length: %d", len(app.bot.token))
+        # Initialize the application before processing updates
+        await app.initialize()
+        logger.info("Application initialized")
         update = Update.de_json(data, app.bot)
         await app.process_update(update)
+        logger.info("Update processed successfully")
         return {"ok": True, "result": "processed"}
     except Exception as e:
         logger.exception(f"Webhook processing error: {e}")
@@ -113,5 +118,13 @@ async def process_webhook(webhook_secret: str, body: dict):
 
 if __name__ == "__main__":
     app = build_application()
-    app.run()
+    app.initialize()
+    app.run_webhook(
+        listen="0.0.0.0",
+        port=int(os.environ.get("PORT", 8080)),
+        url_path="webhook",
+        secret_token=os.environ.get("TELEGRAM_WEBHOOK_SECRET"),
+        cert=None,
+        key=None,
+    )
 
