@@ -4,8 +4,8 @@ import os
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 
-from ..config import settings
-from ..services.freeagent import FreeAgentClient
+from src.api.config import settings
+from src.services.freeagent import FreeAgentClient
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
