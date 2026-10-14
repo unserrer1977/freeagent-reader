@@ -67,11 +67,12 @@ def build_application() -> Application:
     app.add_handler(CommandHandler("connect", connect))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_query))
 
-    # Webhook
+    # Webhook (v21 uses app.bot, not app.updater)
+    bot = app.bot
     webhook_secret = settings.TELEGRAM_WEBHOOK_SECRET or "default-secret"
     webhook_url = os.environ.get("WEBHOOK_URL", "").rstrip("/")
     if webhook_url:
-        app.updater.bot.set_webhook(url=f"{webhook_url}/webhook/{webhook_secret}")
+        bot.set_webhook(url=f"{webhook_url}/webhook/{webhook_secret}")
 
     return app
 
