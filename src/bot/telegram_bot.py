@@ -83,6 +83,8 @@ async def process_webhook(webhook_secret: str, body: dict):
     from telegram.ext import ContextTypes
 
     try:
+        if "message" not in body:
+            return {"ok": True, "result": "no message in payload"}
         update = Update.de_json(body, None)  # None = no dispatcher yet
         # Use the global application
         app = build_application()
