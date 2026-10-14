@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FreeAgent Reader</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #fafafa;
+      --card: #ffffff;
+      --border: #e5e5e5;
+      --text: #1a1a1a;
+      --text-secondary: #666666;
+      --accent: #1168ea;
+      --accent-hover: #0d4fae;
+      --radius: 12px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    header h1 { font-size: 18px; font-weight: 600; }
+    header .status {
+      font-size: 12px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .status .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--accent); display: inline-block;
+    }
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 16px 24px;
+    }
+    .chat-area {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-bottom: 24px;
+    }
+    .message {
+      max-width: 80%;
+      padding: 12px 16px;
+      border-radius: var(--radius);
+      font-size: 14px;
+      line-height: 1.5;
+      animation: fadeIn 0.2s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .message.user {
+      background: var(--accent);
+      color: #fff;
+      margin-left: auto;
+      border-bottom-right-radius: 4px;
+    }
+    .message.bot {
+      background: var(--card);
+      border: 1px solid var(--border);
+      margin-left: 0;
+      border-bottom-left-radius: 4px;
+    }
+    .message .label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      opacity: 0.7;
+      margin-bottom: 4px;
+    }
+    .message.bot .label { background: var(--bg); padding: 2px 8px; border-radius: 6px; }
+    .message.bot .data {
+      margin-top: 8px;
+      white-space: pre-wrap;
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 12px;
+      color: var(--text-secondary);
+      background: var(--bg);
+      padding: 12px;
+      border-radius: 8px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .input-area {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .input-area input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .input-area input:focus { border-color: var(--accent); }
+    .input-area button {
+      padding: 12px 20px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .input-area button:hover { background: var(--accent-hover); }
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .actions button {
+      padding: 10px 16px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    .actions button:hover { background: var(--bg); }
+    .actions .primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .actions .primary:hover { background: var(--accent-hover); }
+    .connecting {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: #e8f4fd;
+      color: var(--accent);
+      border-radius: 8px;
+      font-size: 13px;
+    }
+    .connecting.active { display: flex; }
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--text);
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 100;
+    }
+    .toast.show { opacity: 0.95; }
+    @media (max-width: 640px) {
+      body { padding: 0; }
+      header { padding: 12px 16px; }
+      main { padding: 12px 16px; }
+      .message { max-width: 90%; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>FreeAgent Reader</h1>
+    <div class="status">
+      <span class="dot"></span>
+      <span id="connection-status">Not connected</span>
+    </div>
+  </header>
+
+  <main>
+    <div class="chat-area" id="chat-area">
+      <div class="message bot">
+        <div class="label">Assistant</div>
+        Welcome! Send me a query about your FreeAgent account. I'll fetch data read-only and reply here.
+      </div>
+    </div>
+
+    <div class="input-area">
+      <input type="text" id="query-input" placeholder="e.g. 'show my accounts', 'what invoices are overdue?'" autofocus>
+      <button id="send-btn">Send</button>
+    </div>
+
+    <div class="actions">
+      <button class="primary" id="connect-btn">Connect FreeAgent</button>
+      <button id="clear-btn">Clear chat</button>
+    </div>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const bot = document.getElementById('chat-area');
+    const input = document.getElementById('query-input');
+    const sendBtn = document.getElementById('send-btn');
+    const connectBtn = document.getElementById('connect-btn');
+    const clearBtn = document.getElementById('clear-btn');
+    const statusEl = document.getElementById('connection-status');
+    const toast = document.getElementById('toast');
+    let connected = false;
+
+    function addMessage(text, sender) {
+      const div = document.createElement('div');
+      div.className = `message ${sender}`;
+      div.textContent = text;
+      bot.appendChild(div);
+      bot.scrollTop = bot.scrollHeight;
+    }
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    async function sendQuery(text) {
+      if (!text.trim()) return;
+      addMessage(text, 'user');
+      input.value = '';
+      sendBtn.disabled = true;
+      sendBtn.textContent = 'Sending...';
+
+      try {
+        const res = await fetch('/api/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: text })
+        });
+        const data = await res.json();
+        if (data.success && data.data) {
+          let msg = 'Here is the answer:';
+          if (data.message) msg = data.message;
+          const el = document.createElement('div');
+          el.className = 'message bot';
+          el.innerHTML = `<div class="label">Assistant</div><div class="data">${escapeHtml(JSON.stringify(data.data, null, 2))}</div>`;
+          bot.appendChild(el);
+        } else {
+          const el = document.createElement('div');
+          el.className = 'message bot';
+          el.innerHTML = `<div class="label">Assistant</div><div class="data">${escapeHtml(data.error || data.message || 'Please connect your FreeAgent account first.')}</div>`;
+          bot.appendChild(el);
+        }
+      } catch (e) {
+        const el = document.createElement('div');
+        el.className = 'message bot';
+        el.innerHTML = `<div class="label">Assistant</div><div class="data">Network error: ${escapeHtml(e.message)}</div>`;
+        bot.appendChild(el);
+      }
+      sendBtn.disabled = false;
+      sendBtn.textContent = 'Send';
+      bot.scrollTop = bot.scrollHeight;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    sendBtn.addEventListener('click', () => sendQuery(input.value));
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') sendQuery(input.value);
+    });
+
+    connectBtn.addEventListener('click', async () => {
+      connectBtn.textContent = 'Connecting...';
+      connectBtn.disabled = true;
+      try {
+        const res = await fetch('/api/freeagent/authorize');
+        const data = await res.json();
+        // Open the authorize URL in a new tab
+        window.open(data.auth_url, '_blank');
+        connected = true;
+        statusEl.textContent = 'Connected to FreeAgent';
+        showToast('Connect link opened — authorize the app.');
+      } catch (e) {
+        showToast('Failed to connect: ' + e.message);
+      }
+      connectBtn.disabled = false;
+      connectBtn.textContent = 'Connect FreeAgent';
+    });
+
+    clearBtn.addEventListener('click', () => {
+      bot.innerHTML = `<div class="message bot"><div class="label">Assistant</div>Welcome! Send me a query about your FreeAgent account.</div>`;
+      connected = false;
+      statusEl.textContent = 'Not connected';
+    });
+
+    // Check status
+    fetch('/healthz').then(r => r.json()).then(d => {
+      console.log('Service:', d);
+    });
+  </script>
+</body>
+</html>
