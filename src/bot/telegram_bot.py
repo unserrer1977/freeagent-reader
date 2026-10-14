@@ -58,8 +58,12 @@ async def handle_query(update: Update, context: ContextTypes):
         await update.message.reply_html(f"Error: {e}")
 
 
+app = None
+
+
 def build_application() -> Application:
     """Build the Telegram application with webhook support."""
+    global app
     app = Application.builder().token(settings.TELEGRAM_BOT_TOKEN).build()
 
     # Register handlers
@@ -85,9 +89,11 @@ async def process_webhook(webhook_secret: str, body: dict):
     try:
         if "message" not in body:
             return {"ok": True, "result": "no message in payload"}
-        update = Update.de_json(body, None)  # None = no dispatcher yet
-        # Use the global application
-        app = build_application()
+        # Use the global application's bot to parse the update
+        global app
+        if app is None:
+            app = build_application()
+        update = Update.de_json(body, app.bot)
         await app.process_update(update)
         return {"ok": True, "result": "processed"}
     except Exception as e:
