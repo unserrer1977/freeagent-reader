@@ -95,6 +95,10 @@ async def process_webhook(webhook_secret: str, body: dict):
             msg = data["message"]
             if "is_bot" not in msg:
                 msg["is_bot"] = False
+            # Also add is_bot to the from (sender) object
+            if "from" in msg and isinstance(msg["from"], dict):
+                if "is_bot" not in msg["from"]:
+                    msg["from"]["is_bot"] = False
         # Use the global application's bot to parse the update
         global app
         if app is None:
