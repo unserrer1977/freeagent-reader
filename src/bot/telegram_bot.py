@@ -39,7 +39,7 @@ async def handle_query(update: Update, context: ContextTypes):
     try:
         # Call the query API endpoint
         import httpx
-        from ..config import settings
+        from src.api.config import settings
 
         webhook_secret = settings.TELEGRAM_WEBHOOK_SECRET or "default-secret"
         api_base = os.environ.get("API_BASE_URL", "http://127.0.0.1:8000")
@@ -94,9 +94,8 @@ async def process_webhook(webhook_secret: str, body: dict):
         data = dict(body)
         if "message" in data:
             msg = data["message"]
-            if "is_bot" not in msg:
-                msg["is_bot"] = False
-            # Also add is_bot to the from (sender) object
+            # Telegram's Message.from object carries is_bot; the message object itself does not.
+            # Only ensure the sender object is complete for the User parser.
             if "from" in msg and isinstance(msg["from"], dict):
                 if "is_bot" not in msg["from"]:
                     msg["from"]["is_bot"] = False
