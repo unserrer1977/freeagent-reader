@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from typing import Optional
 from ..config import settings
 
-router = APIRouter(prefix="/freeagent", tags=["freeagent"])
+router = APIRouter(prefix="", tags=["freeagent"])
 
 
 class TokenExchangeResponse(BaseModel):
