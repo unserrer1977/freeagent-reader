@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     # FreeAccount OAuth
     FREEAGENT_CLIENT_ID: str = ""
     FREEAGENT_CLIENT_SECRET: str = ""
-    FREEAGENT_REDIRECT_URI: str = "https://your-app.railway.app/api/freeagent/callback"
+    FREEAGENT_REDIRECT_URI: str = "https://honest-playfulness-production-bbba.up.railway.app/api/freeagent/callback"
     # In production this MUST be https (Railway provides the public URL)
     FREEAGENT_SANDBOX: bool = False
     # General
