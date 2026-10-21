@@ -19,7 +19,6 @@ app.add_middleware(
 
 app.include_router(auth.router, prefix="/api/freeagent")
 app.include_router(query.router, prefix="/api")
-app.include_router(telegram.router, prefix="/api/telegram")
 app.include_router(web.router)
 
 
