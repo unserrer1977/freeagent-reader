@@ -13,6 +13,7 @@ router = APIRouter(prefix="/freeagent", tags=["freeagent"])
 
 class QueryRequest(BaseModel):
     query: str
+    limit: Optional[int] = 10
 
 
 class QueryResponse(BaseModel):
@@ -23,18 +24,18 @@ class QueryResponse(BaseModel):
 
 
 def get_freeagent_user(
-    x_telegram_user_id: Optional[str] = Header(default=None, alias="x-telegram-user-id"),
+    x_freeagent_user_id: Optional[str] = Header(default=None, alias="x-freeagent-user-id"),
     db: Session = Depends(get_db),
 ):
-    if not x_telegram_user_id:
-        raise HTTPException(status_code=401, detail="Missing Telegram user ID")
-    user = get_active_freeagent_user(db, x_telegram_user_id)
+    if not x_freeagent_user_id:
+        raise HTTPException(status_code=401, detail="Missing FreeAgent user ID")
+    user = get_active_freeagent_user(db, x_freeagent_user_id)
     if not user:
         raise HTTPException(status_code=401, detail="Not connected to FreeAgent account")
     return user
 
 
-@router.post("/query", response_model=QueryResponse)
+@router.post("/query")
 def send_query(
     req: QueryRequest,
     user: ApplicationUser = Depends(get_freeagent_user),

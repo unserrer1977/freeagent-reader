@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Response
 from pydantic import BaseModel
-
 from typing import Optional
+from urllib.parse import urlencode
+
 from ..config import settings
 
 router = APIRouter(prefix="", tags=["freeagent"])
@@ -18,8 +19,6 @@ class TokenExchangeResponse(BaseModel):
 @router.get("/authorize")
 def authorize():
     """Redirect to FreeAgent to authorize the app (read-only scope)."""
-    from urllib.parse import urlencode
-
     params = {
         "client_id": settings.FREEAGENT_CLIENT_ID,
         "redirect_uri": settings.FREEAGENT_REDIRECT_URI,
@@ -30,7 +29,7 @@ def authorize():
     return {"auth_url": auth_url}
 
 
-@router.post("/callback", response_model=TokenExchangeResponse)
+@router.post("/callback")
 def oauth_callback(code: str, state: str, redirect_uri: Optional[str] = None):
     """
     Exchange the authorization code for an access token.

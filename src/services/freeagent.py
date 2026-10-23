@@ -27,7 +27,7 @@ class FreeAgentClient:
         return {
             "Authorization": f"Bearer {self.access_token}",
             "Accept": "application/json",
-            "User-Agent": "freeagent-reader/1.0",
+            "User-Agent": "freeagent-financial-intelligence/1.0",
         }
 
     def _get(self, path: str, params: Optional[dict] = None) -> FreeAgentResult:
@@ -44,9 +44,6 @@ class FreeAgentClient:
             return FreeAgentResult(success=False, error=str(e))
 
     # ---- Entity endpoints ----
-
-    def _list(self, endpoint: str, params: Optional[dict] = None) -> FreeAgentResult:
-        return self._get(f"/v2/{endpoint}", params=params)
 
     def get_company(self) -> FreeAgentResult:
         return self._get("/v2/company")

@@ -1,33 +1,7 @@
-# Byte-compiled / optimized
 __pycache__/
-*.py[cod]
-*$py.class
-
-# Distribution / packaging
+*.pyc
+.env
+test.db
+*.db
 dist/
 build/
-*.egg
-*.egg-info/
-.eggs/
-
-# Virtual environments
-venv/
-ENV/
-env/
-
-# Railway and Docker
-Railway.toml
-docker-compose.yml
-
-# Secrets
-.env
-*.key
-*.pem
-
-# SQLite
-*.db
-*.sqlite3
-
-# Logs
-*.log
-.log/

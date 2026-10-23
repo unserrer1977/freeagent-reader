@@ -1,7 +1,5 @@
 from sqlalchemy import create_engine, Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text
-from sqlalchemy.orm import sessionmaker
-
-from .models import Base
+from sqlalchemy.orm import sessionmaker, declarative_base
 
 from .config import settings
 
@@ -10,6 +8,7 @@ engine = create_engine(
     connect_args={"check_same_thread": False} if settings.DATABASE_URL.startswith("sqlite") else {},
 )
 SessionLocal = sessionmaker(autoflush=False, bind=engine)
+Base = declarative_base()
 
 
 def get_db():
