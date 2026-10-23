@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import declarative_base, Session
 
 Base = declarative_base()
 
@@ -25,3 +25,8 @@ class ApplicationUser(Base):
 
     def __repr__(self):
         return f"<ApplicationUser(id={self.id}, company={self.freeagent_company_name})>"
+
+
+def get_active_freeagent_user(db: Session, user_id: str) -> Optional[ApplicationUser]:
+    """Get the active FreeAgent user by ID, or None if not found."""
+    return db.query(ApplicationUser).filter(ApplicationUser.telegram_user_id == user_id).first()
