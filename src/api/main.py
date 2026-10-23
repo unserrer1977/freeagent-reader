@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from .config import settings
 from .db import init_db
-from .routers import auth, query, telegram, web
+from .routers import auth, query, web
 
 app = FastAPI(title="FreeAgent Reader")
 
@@ -26,13 +26,6 @@ app.include_router(web.router)
 @app.get("/healthz")
 def health():
     return {"status": "ok", "service": "freeagent-reader"}
-
-
-# Telegram webhook endpoint for receiving updates
-@app.post(f"/webhook/{{webhook_secret}}")
-async def telegram_webhook(webhook_secret: str, body: dict):
-    from src.bot.telegram_bot import process_webhook
-    return await process_webhook(webhook_secret, body)
 
 
 # Web UI
