@@ -15,6 +15,7 @@ class Settings(BaseSettings):
 
     # General
     SECRET_KEY: str = "change-me"
+    DATABASE_URL: str = os.environ.get("DATABASE_URL", "sqlite:///./freeagent_reader.db")
 
     model_config = {"env_file": ".env", "case_sensitive": False}
 
